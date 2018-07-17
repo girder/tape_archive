@@ -85,8 +85,7 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
                         name=name, creator=user, folder=parent, reuseExisting=True)
                     file = File().createFile(
                         name=name, creator=user, item=item, reuseExisting=True,
-                        assetstore=self.assetstore,
-                        size=entry.size, saveFile=False)
+                        assetstore=self.assetstore, size=entry.size, saveFile=False)
                     file['path'] = ''
                     file['tarPath'] = path
                     file['imported'] = True
@@ -94,6 +93,7 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
                     File().save(file)
 
 @boundHandler
+@access.admin(scope=TokenScope.DATA_WRITE)
 def _exportTar(self):
     pass
 
@@ -106,23 +106,23 @@ def _exportTar(self):
            'references to it in the Girder data hierarchy. Deleting '
            'those references will not delete the underlying data.')
     .modelParam('id', model=AssetstoreModel)
-    .modelParam('folderId', 'Import destination folder.', model=Folder, level=AccessType.WRITE)
-    .param('importPath', 'Root path within the underlying storage system '
-           'to import.', required=False)
+    .modelParam('folderId', 'Import destination folder.', model=Folder, level=AccessType.WRITE,
+                paramType='formData')
+    .param('path', 'Path of the tar file to import.')
     .param('progress', 'Whether to record progress on the import.',
            dataType='boolean', default=False, required=False)
     .errorResponse()
     .errorResponse('You are not an administrator.', 403))
-def _importTar(self, assetstore, folder, importPath, progress):
+def _importTar(self, assetstore, folder, path, progress):
     user = self.getCurrentUser()
     adapter = getAssetstoreAdapter(assetstore)
 
     with ProgressContext(progress, user=user, title='Importing data') as ctx:
-        return adapter._importTar(importPath, folder, ctx, user)
+        adapter._importTar(path, folder, ctx, user)
 
 
 def load(info):
     setAssetstoreAdapter(AssetstoreType.FILESYSTEM, TarSupportAdapter)
 
-    Assetstore.route('POST', (':id', 'tar_export'), _exportTar)
-    Assetstore.route('POST', (':id', 'tar_import'), _importTar)
+    info['apiRoot'].assetstore.route('POST', (':id', 'tar_export'), _exportTar)
+    info['apiRoot'].assetstore.route('POST', (':id', 'tar_import'), _importTar)
