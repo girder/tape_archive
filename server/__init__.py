@@ -1,13 +1,13 @@
+import datetime
 import os
 import tarfile
 
 from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.api.rest import boundHandler, setResponseHeader
-from girder.api.v1.assetstore import Assetstore
 from girder.constants import AccessType, AssetstoreType, TokenScope
-from girder.exceptions import AccessException
-from girder.models.assetstore import Assetstore as AssetstoreModel
+from girder.exceptions import AccessException, RestException
+from girder.models.assetstore import Assetstore
 from girder.models.file import File
 from girder.models.folder import Folder
 from girder.models.item import Item
@@ -92,10 +92,55 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
                     file['pathInTarfile'] = entry.name
                     File().save(file)
 
+    def _exportTar(self, path, folder, progress, user, compression):
+        epoch = datetime.datetime(1970, 1, 1)
+
+        if progress:
+            progress.update(total=-1, message='Computing size...')
+            progress.update(total=Folder().getSizeRecursive(folder), current=0)
+
+        with tarfile.open(path, 'w:' + compression) as tar:
+            for name, file in Folder().fileList(folder, user=user, data=False):
+                progress.update(message=name)
+                ti = tarfile.TarInfo(name)
+                ti.size = file['size']
+                ti.mtime = int((file.get('updated', file['created']) - epoch).total_seconds())
+                with File().open(file) as fh:
+                    tar.addfile(ti, fh)
+                progress.update(increment=ti.size)
+
+                # TODO update file object to point to new location.
+                # TODO skip file if it's already in an archive
+
+
 @boundHandler
 @access.admin(scope=TokenScope.DATA_WRITE)
-def _exportTar(self):
-    pass
+@autoDescribeRoute(
+    Description('Archive the contents of a Girder folder.')
+    .notes('This will move and (optionally compress) files from their assetstore location '
+           'to within a tape archive (tar) file. They can still be served from that file as '
+           'usual, but there will be a latency associated with reading from the archive format. '
+           '\n\nFiles under this folder that are already archived will be skipped and not '
+           'added to the new archive.')
+    .modelParam('id', model=Assetstore)
+    .modelParam('folderId', 'The folder to archive.', model=Folder, level=AccessType.WRITE,
+                paramType='formData')
+    .param('path', 'Path where the tar file will be written.')
+    .param('compression', 'Compression level', required=False, default='gz',
+           enum=('gz', 'bz2', ''))
+    .param('progress', 'Whether to record progress on the import.',
+           dataType='boolean', default=False, required=False)
+    .errorResponse()
+    .errorResponse('You are not an administrator.', 403))
+def _exportTar(self, assetstore, folder, path, compression, progress):
+    if os.path.exists(path):
+        raise RestException('File already exists at %s.' % path)
+
+    user = self.getCurrentUser()
+    adapter = getAssetstoreAdapter(assetstore)
+
+    with ProgressContext(progress, user=user, title='Archiving %s' % folder['name']) as ctx:
+        adapter._exportTar(path, folder, ctx, user, compression)
 
 
 @boundHandler
@@ -105,7 +150,7 @@ def _exportTar(self):
     .notes('This does not move or copy the existing data, it just creates '
            'references to it in the Girder data hierarchy. Deleting '
            'those references will not delete the underlying data.')
-    .modelParam('id', model=AssetstoreModel)
+    .modelParam('id', model=Assetstore)
     .modelParam('folderId', 'Import destination folder.', model=Folder, level=AccessType.WRITE,
                 paramType='formData')
     .param('path', 'Path of the tar file to import.')
