@@ -15,6 +15,8 @@ from girder.utility.assetstore_utilities import getAssetstoreAdapter, setAssetst
 from girder.utility.filesystem_assetstore_adapter import FilesystemAssetstoreAdapter, BUF_SIZE
 from girder.utility.progress import ProgressContext
 
+EPOCH = datetime.datetime(1970, 1, 1)
+
 
 class TarSupportAdapter(FilesystemAssetstoreAdapter):
     def downloadFile(self, file, offset=0, headers=True, endByte=None, contentDisposition=None,
@@ -34,7 +36,12 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
             self.setContentHeaders(file, offset, endByte, contentDisposition)
 
         def stream():
-            with tarfile.open(file['tarPath'], 'r') as tar:
+            # Support tarPath as either absolute or relative to assetstore root
+            if os.path.isabs(file['tarPath']):
+                path = file['tarPath']
+            else:
+                path = os.path.join(self.assetstore['root'], file['tarPath'])
+            with tarfile.open(path, 'r') as tar:
                 fh = tar.extractfile(file['pathInTarfile'])
                 bytesRead = offset
 
@@ -56,7 +63,42 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
 
         return stream
 
+    def _exportTar(self, path, folder, progress, user, compression):
+        if os.path.isabs(path):
+            raise RestException('Tar path must be relative, not absolute (%s).' % path)
+
+        abspath = os.path.join(self.assetstore['root'], path)
+
+        if os.path.exists(abspath):
+            raise RestException('File already exists at %s.' % path)
+
+        if progress:
+            progress.update(total=-1, message='Computing size...')
+            progress.update(total=Folder().getSizeRecursive(folder), current=0)
+
+        with tarfile.open(abspath, 'w:' + compression) as tar:
+            for name, file in Folder().fileList(folder, user=user, data=False):
+                if not file.get('imported') or not file.get('tarPath'):
+                    progress.update(message=name)
+                    ti = tarfile.TarInfo(name)
+                    ti.size = file['size']
+                    ti.mtime = int((file.get('updated', file['created']) - EPOCH).total_seconds())
+                    with File().open(file) as fh:
+                        tar.addfile(ti, fh)
+
+                    file['imported'] = True
+                    file['tarPath'] = path  # Store as relative so assetstore can be moved
+                    file['pathInTarFile'] = name
+                    File().save(file)
+
+                progress.update(increment=file['size'])
+
+        # TODO re-iterate over file list and delete any files that still have path & tarPath
+
     def _importTar(self, path, folder, progress, user):
+        if not os.path.isabs(path):
+            path = os.path.join(self.assetstore['root'], path)
+
         folderCache = {}
 
         def _resolveFolder(name):
@@ -92,26 +134,6 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
                     file['pathInTarfile'] = entry.name
                     File().save(file)
 
-    def _exportTar(self, path, folder, progress, user, compression):
-        epoch = datetime.datetime(1970, 1, 1)
-
-        if progress:
-            progress.update(total=-1, message='Computing size...')
-            progress.update(total=Folder().getSizeRecursive(folder), current=0)
-
-        with tarfile.open(path, 'w:' + compression) as tar:
-            for name, file in Folder().fileList(folder, user=user, data=False):
-                progress.update(message=name)
-                ti = tarfile.TarInfo(name)
-                ti.size = file['size']
-                ti.mtime = int((file.get('updated', file['created']) - epoch).total_seconds())
-                with File().open(file) as fh:
-                    tar.addfile(ti, fh)
-                progress.update(increment=ti.size)
-
-                # TODO update file object to point to new location.
-                # TODO skip file if it's already in an archive
-
 
 @boundHandler
 @access.admin(scope=TokenScope.DATA_WRITE)
@@ -125,7 +147,7 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
     .modelParam('id', model=Assetstore)
     .modelParam('folderId', 'The folder to archive.', model=Folder, level=AccessType.WRITE,
                 paramType='formData')
-    .param('path', 'Path where the tar file will be written.')
+    .param('path', 'Path where the tar file will be written, relative to assetstore root.')
     .param('compression', 'Compression level', required=False, default='gz',
            enum=('gz', 'bz2', ''))
     .param('progress', 'Whether to record progress on the import.',
@@ -133,9 +155,6 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
     .errorResponse()
     .errorResponse('You are not an administrator.', 403))
 def _exportTar(self, assetstore, folder, path, compression, progress):
-    if os.path.exists(path):
-        raise RestException('File already exists at %s.' % path)
-
     user = self.getCurrentUser()
     adapter = getAssetstoreAdapter(assetstore)
 
