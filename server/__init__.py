@@ -91,7 +91,7 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
                         file['assetstoreId'] = self.assetstore['_id']
                     file['imported'] = True
                     file['tarPath'] = path  # Store as relative so assetstore can be moved
-                    file['pathInTarFile'] = name
+                    file['pathInTarfile'] = name
                     File().save(file)
 
                 progress.update(increment=file['size'])
