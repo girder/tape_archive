@@ -86,6 +86,9 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
                     with File().open(file) as fh:
                         tar.addfile(ti, fh)
 
+                    if file['assetstoreId'] != self.assetstore['_id']:
+                        file['preArchiveAssetstoreId'] = file['assetstoreId']
+                        file['assetstoreId'] = self.assetstore['_id']
                     file['imported'] = True
                     file['tarPath'] = path  # Store as relative so assetstore can be moved
                     file['pathInTarFile'] = name
@@ -94,6 +97,7 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
                 progress.update(increment=file['size'])
 
         # TODO re-iterate over file list and delete any files that still have path & tarPath
+        # TODO split up tar files into nearly fixed-size chunks?
 
     def _importTar(self, path, folder, progress, user):
         if not os.path.isabs(path):
@@ -148,7 +152,7 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
     .modelParam('folderId', 'The folder to archive.', model=Folder, level=AccessType.WRITE,
                 paramType='formData')
     .param('path', 'Path where the tar file will be written, relative to assetstore root.')
-    .param('compression', 'Compression level', required=False, default='gz',
+    .param('compression', 'Compression method', required=False, default='gz',
            enum=('gz', 'bz2', ''))
     .param('progress', 'Whether to record progress on the import.',
            dataType='boolean', default=False, required=False)
