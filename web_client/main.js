@@ -1,7 +1,9 @@
 import events from 'girder/events';
 import { restRequest } from 'girder/rest';
 import { wrap } from 'girder/utilities/PluginUtils';
+import AssetstoresView from 'girder/views/body/AssetstoresView';
 import FilesystemImportView from 'girder/views/body/FilesystemImportView';
+import exportButton from './exportButton.pug';
 import importTemplate from './import.pug';
 import './import.styl';
 import 'girder/utilities/jquery/girderEnable';
@@ -16,7 +18,6 @@ FilesystemImportView.prototype.events['click .g-tape-archive-import'] = function
     e.preventDefault();
 
     $(e.target).girderEnable(false);
-    window.view = this;
     restRequest({
         type: 'POST',
         url: `assetstore/${this.assetstore.id}/tar_import`,
@@ -44,3 +45,17 @@ FilesystemImportView.prototype.events['click .g-tape-archive-import'] = function
         $(e.target).girderEnable(true);
     })
 };
+
+wrap(AssetstoresView, 'render', function (render) {
+   render.call(this);
+   this.$('.g-assetstore-container').each((k, el) => {
+       if ($(el).find('.g-assetstore-info-section[assetstore-type=0]').length === 0) {
+           return;  // skip non-filesystem assetstore
+       }
+       const cid = $(el).find('.g-assetstore-info-section').attr('cid');
+       $(el).find('.g-assetstore-buttons').append(exportButton({
+           assetstoreId: this.collection.get(cid).id
+       }));
+   });
+   return this;
+});
