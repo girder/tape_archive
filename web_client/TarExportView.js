@@ -31,9 +31,9 @@ const TarExportView = View.extend({
     initialize() {
         this._browserWidgetView = new BrowserWidget({
             parentView: this,
-            titleText: 'Destination',
-            helpText: 'Browse to a location to select it as the destination.',
-            submitText: 'Select Destination',
+            titleText: 'Archive a folder',
+            helpText: 'Browse to a folder.',
+            submitText: 'Choose folder',
             validate: function (model) {
                 let isValid = $.Deferred();
                 if (!model) {
