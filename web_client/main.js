@@ -1,12 +1,16 @@
 import events from 'girder/events';
+import router from 'girder/router';
 import { restRequest } from 'girder/rest';
 import { wrap } from 'girder/utilities/PluginUtils';
 import AssetstoresView from 'girder/views/body/AssetstoresView';
+import AssetstoreModel from 'girder/models/AssetstoreModel';
 import FilesystemImportView from 'girder/views/body/FilesystemImportView';
 import exportButton from './exportButton.pug';
 import importTemplate from './import.pug';
+import TarExportView from './TarExportView';
 import './import.styl';
 import 'girder/utilities/jquery/girderEnable';
+
 
 wrap(FilesystemImportView, 'render', function (render) {
     render.call(this);
@@ -58,4 +62,17 @@ wrap(AssetstoresView, 'render', function (render) {
        }));
    });
    return this;
+});
+
+router.route('assetstore/:id/tar_export', 'tarExport', function (id) {
+    const model = new AssetstoreModel({
+        _id: id
+    });
+    model.fetch().then(() => {
+        events.trigger('g:navigateTo', TarExportView, {
+            model
+        }, {
+            renderNow: true
+        });
+    });
 });

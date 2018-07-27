@@ -1,0 +1,39 @@
+.g-body-title Export a folder to a tape archive (TAR) file
+.g-body-subtitle= assetstore.name()
+
+p.
+  Use this page to export a Girder folder to a tape archive (TAR) file for backup or cold
+  storage purposes. This will not change the view of the folder or its files in Girder in any way,
+  and the file will still be able to be downloaded. However, there will be a higher latency for
+  downloading files that reside in a tape archive due to the latency of reading the archive
+  index to look up the file. There may also be an additional very large latency if the underlying
+  tape archive service has moved the file from the staging filesystem to a physical tape,
+  which happens automatically and asynchronously.
+p.
+  This is an incremental operation; if you run it on a folder under which some files are already
+  residing in a tape archive, those files will be skipped. Only files that are not already
+  archived will be added to the new tape archive file.
+
+form.g-tar-export-form
+  .form-group
+    label(for="g-tar-export-path") Export path (relative path under this assetstore's root)
+    input#g-tar-export-path.form-control.input-sm(type="text", placeholder="E.g. my.tar.gz")
+  .form-group
+    label(for="g-tar-export-folder-id") Folder to export
+    .input-group.input-group-sm
+      input#g-tar-export-folder-id.form-control.input-sm(
+          type="text",
+          placeholder="ID of the folder to export")
+      .input-group-btn
+        button.g-open-browser.btn.btn-default(type="button")
+          i.icon-folder-open
+  .form-group
+    label(for="g-tar-export-compression") Compression
+    select#g-tar-export-compression.form-control
+      option(value="gz", selected) gzip
+      option(value="bz2") bzip2
+      option(value="") (none)
+  .g-validation-failed-message
+  button.g-submit-tar-export.btn.btn-success(type="submit")
+    i.icon-link-ext
+    |  Export folder
