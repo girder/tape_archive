@@ -35,7 +35,7 @@ FilesystemImportView.prototype.events['click .g-tape-archive-import'] = function
         events.trigger('g:alert', {
             icon: 'ok',
             type: 'success',
-            message: 'Import complete.',
+            text: 'Import complete.',
             timeout: 4000,
         });
     }).error((resp) => {
