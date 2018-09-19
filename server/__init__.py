@@ -190,6 +190,7 @@ def _importTar(self, assetstore, folder, path, progress):
 
 
 def load(info):
+    # TODO allow a file to be stored in multiple tape archive assetstores
     setAssetstoreAdapter(AssetstoreType.FILESYSTEM, TarSupportAdapter)
 
     info['apiRoot'].assetstore.route('POST', (':id', 'tar_export'), _exportTar)

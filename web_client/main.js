@@ -26,7 +26,7 @@ FilesystemImportView.prototype.events['click .g-tape-archive-import'] = function
         type: 'POST',
         url: `assetstore/${this.assetstore.id}/tar_import`,
         data: {
-            folderId: this.$('#g-filesystem-import-dest-id').val(),
+            folderId: this.$('#g-filesystem-import-dest-id').val().split(' ')[0],
             path: this.$('#g-filesystem-import-path').val(),
             progress: true
         },
