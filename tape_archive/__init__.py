@@ -14,9 +14,24 @@ from girder.models.item import Item
 from girder.utility.assetstore_utilities import getAssetstoreAdapter, setAssetstoreAdapter
 from girder.utility.filesystem_assetstore_adapter import FilesystemAssetstoreAdapter, BUF_SIZE
 from girder.utility.progress import ProgressContext
+from girder.plugin import getPlugin, GirderPlugin
 
 EPOCH = datetime.datetime(1970, 1, 1)
 
+
+class TapeArchivePlugin(GirderPlugin):
+    DISPLAY_NAME = 'Tape Archive'
+    CLIENT_SOURCE_PATH = 'web_client'
+
+    def load(self, info):
+        # TODO allow a file to be stored in multiple tape archive assetstores
+        setAssetstoreAdapter(AssetstoreType.FILESYSTEM, TarSupportAdapter)
+
+        info['apiRoot'].assetstore.route('POST', (':id', 'tar_export'), _exportTar)
+        info['apiRoot'].assetstore.route('POST', (':id', 'tar_import'), _importTar)
+
+        # getPlugin('apiRoot').load(info).assetstore.route('POST', (':id', 'tar_export'), _exportTar)
+        # getPlugin('apiRoot').load(info).assetstore.route('POST', (':id', 'tar_import'), _importTar)
 
 class TarSupportAdapter(FilesystemAssetstoreAdapter):
     def downloadFile(self, file, offset=0, headers=True, endByte=None, contentDisposition=None,
@@ -189,9 +204,9 @@ def _importTar(self, assetstore, folder, path, progress):
         adapter._importTar(path, folder, ctx, user)
 
 
-def load(info):
-    # TODO allow a file to be stored in multiple tape archive assetstores
-    setAssetstoreAdapter(AssetstoreType.FILESYSTEM, TarSupportAdapter)
+# def load(info):
+#     # TODO allow a file to be stored in multiple tape archive assetstores
+#     setAssetstoreAdapter(AssetstoreType.FILESYSTEM, TarSupportAdapter)
 
-    info['apiRoot'].assetstore.route('POST', (':id', 'tar_export'), _exportTar)
-    info['apiRoot'].assetstore.route('POST', (':id', 'tar_import'), _importTar)
+#     info['apiRoot'].assetstore.route('POST', (':id', 'tar_export'), _exportTar)
+#     info['apiRoot'].assetstore.route('POST', (':id', 'tar_import'), _importTar)
