@@ -1,8 +1,8 @@
-import { restRequest } from 'girder/rest';
-import View from 'girder/views/View';
-import BrowserWidget from 'girder/views/widgets/BrowserWidget';
+import { restRequest } from '@girder/core/rest';
+import View from '@girder/core/views/View';
+import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
 import tarExport from './tarExport.pug';
-import 'girder/utilities/jquery/girderEnable';
+import '@girder/core/utilities/jquery/girderEnable';
 
 const TarExportView = View.extend({
     events: {
