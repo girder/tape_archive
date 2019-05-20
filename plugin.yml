@@ -1,4 +1,0 @@
-name: Tape archives
-description: >
-   Adds support to filesystem assetstores for storing Girder files within compressed or
-   uncompressed tape archive (TAR) files via import and export processes.
