@@ -8,7 +8,7 @@ from setuptools import find_packages, setup
 # perform the install
 setup(
     name='tape-archive',
-    version='2.0.0',
+    version='1.0.0',
     description='Adds support to filesystem assetstores for storing Girder files within compressed or \
                  uncompressed tape archive (TAR) files via import and export processes.',
     author='Kitware, Inc.',
