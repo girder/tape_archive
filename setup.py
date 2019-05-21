@@ -27,7 +27,7 @@ setup(
         'Programming Language :: Python :: 3.5'
     ],
     include_package_data=True,
-    packages=find_packages('tape_archive'),
+    packages=find_packages(exclude=['plugin_tests']),
     # zip_safe=False,
     install_requires=['girder>=3.0.0a1'],
     entry_points={
