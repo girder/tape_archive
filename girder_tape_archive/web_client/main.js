@@ -5,6 +5,7 @@ import { wrap } from '@girder/core/utilities/PluginUtils';
 import AssetstoresView from '@girder/core/views/body/AssetstoresView';
 import AssetstoreModel from '@girder/core/models/AssetstoreModel';
 import FilesystemImportView from '@girder/core/views/body/FilesystemImportView';
+import $ from 'jquery';
 import exportButton from './exportButton.pug';
 import importTemplate from './import.pug';
 import TarExportView from './TarExportView';

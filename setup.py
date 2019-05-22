@@ -1,18 +1,13 @@
 # -*- coding: utf-8 -*-
-import os
-
 from setuptools import find_packages, setup
-
-
-
 # perform the install
 setup(
     name='tape-archive',
     version='1.0.0',
-    description='Adds support to filesystem assetstores for storing Girder files within compressed or \
-                 uncompressed tape archive (TAR) files via import and export processes.',
-    author='Kitware, Inc.',
-    author_email='kitware@kitware.com',
+    description='Adds support to filesystem assetstores for storing Girder files within compressed or '
+                'uncompressed tape archive (TAR) files via import and export processes.',
+    maintainer='Kitware, Inc.',
+    maintainer_email='kitware@kitware.com',
     url='https://github.com/girder/tape_archive',
     license='Apache 2.0',
     classifiers=[
@@ -28,11 +23,10 @@ setup(
     ],
     include_package_data=True,
     packages=find_packages(exclude=['plugin_tests']),
-    # zip_safe=False,
     install_requires=['girder>=3.0.0a1'],
     entry_points={
         'girder.plugin': [
-            'tape-archive = tape_archive:TapeArchivePlugin'
+            'tape_archive = girder_tape_archive:TapeArchivePlugin'
         ]
     }
 )

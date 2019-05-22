@@ -1,6 +1,7 @@
 import { restRequest } from '@girder/core/rest';
 import View from '@girder/core/views/View';
 import BrowserWidget from '@girder/core/views/widgets/BrowserWidget';
+import $ from 'jquery';
 import tarExport from './tarExport.pug';
 import '@girder/core/utilities/jquery/girderEnable';
 
