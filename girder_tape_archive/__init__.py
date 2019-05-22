@@ -30,9 +30,6 @@ class TapeArchivePlugin(GirderPlugin):
         info['apiRoot'].assetstore.route('POST', (':id', 'tar_export'), _exportTar)
         info['apiRoot'].assetstore.route('POST', (':id', 'tar_import'), _importTar)
 
-        # getPlugin('apiRoot').load(info).assetstore.route('POST', (':id', 'tar_export'), _exportTar)
-        # getPlugin('apiRoot').load(info).assetstore.route('POST', (':id', 'tar_import'), _importTar)
-
 class TarSupportAdapter(FilesystemAssetstoreAdapter):
     def downloadFile(self, file, offset=0, headers=True, endByte=None, contentDisposition=None,
                      **kwargs):
@@ -202,11 +199,3 @@ def _importTar(self, assetstore, folder, path, progress):
 
     with ProgressContext(progress, user=user, title='Importing data') as ctx:
         adapter._importTar(path, folder, ctx, user)
-
-
-# def load(info):
-#     # TODO allow a file to be stored in multiple tape archive assetstores
-#     setAssetstoreAdapter(AssetstoreType.FILESYSTEM, TarSupportAdapter)
-
-#     info['apiRoot'].assetstore.route('POST', (':id', 'tar_export'), _exportTar)
-#     info['apiRoot'].assetstore.route('POST', (':id', 'tar_import'), _importTar)
