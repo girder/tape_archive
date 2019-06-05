@@ -1,1 +1,3 @@
 *.pyc
+girder_tape_archive.egg-info/
+.tox/

@@ -1,15 +1,16 @@
-import events from 'girder/events';
-import router from 'girder/router';
-import { restRequest } from 'girder/rest';
-import { wrap } from 'girder/utilities/PluginUtils';
-import AssetstoresView from 'girder/views/body/AssetstoresView';
-import AssetstoreModel from 'girder/models/AssetstoreModel';
-import FilesystemImportView from 'girder/views/body/FilesystemImportView';
+import events from '@girder/core/events';
+import router from '@girder/core/router';
+import { restRequest } from '@girder/core/rest';
+import { wrap } from '@girder/core/utilities/PluginUtils';
+import AssetstoresView from '@girder/core/views/body/AssetstoresView';
+import AssetstoreModel from '@girder/core/models/AssetstoreModel';
+import FilesystemImportView from '@girder/core/views/body/FilesystemImportView';
+import $ from 'jquery';
 import exportButton from './exportButton.pug';
 import importTemplate from './import.pug';
 import TarExportView from './TarExportView';
 import './import.styl';
-import 'girder/utilities/jquery/girderEnable';
+import '@girder/core/utilities/jquery/girderEnable';
 
 
 wrap(FilesystemImportView, 'render', function (render) {

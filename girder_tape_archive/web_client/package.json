@@ -1,0 +1,12 @@
+{
+    "name": "@girder/tape_archive",
+    "version": "1.0.0",
+    "peerDepencencies": {
+        "@girder/core": "*"
+    },
+    "dependencies": {},
+    "girderPlugin": {
+        "name": "tape_archive",
+        "main": "./main.js"
+    }
+}
