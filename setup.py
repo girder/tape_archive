@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 from setuptools import find_packages, setup
-# perform the install
+
 setup(
     name='girder-tape-archive',
     version='3.0.0',
-    description='Adds support to filesystem assetstores for storing Girder files within compressed or '
-                'uncompressed tape archive (TAR) files via import and export processes.',
+    description='Adds support to filesystem assetstores for storing Girder files within '
+                'tape archive (TAR) files via import and export processes.',
     maintainer='Kitware, Inc.',
     maintainer_email='kitware@kitware.com',
     url='https://github.com/girder/tape_archive',
