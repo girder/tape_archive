@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='girder-tape-archive',
-    version='3.0.0',
+    version='3.1.0',
     description='Adds support to filesystem assetstores for storing Girder files within '
                 'tape archive (TAR) files via import and export processes.',
     maintainer='Kitware, Inc.',
