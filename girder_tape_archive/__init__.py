@@ -6,17 +6,28 @@ from girder.api import access
 from girder.api.describe import autoDescribeRoute, Description
 from girder.api.rest import boundHandler, setResponseHeader
 from girder.constants import AccessType, AssetstoreType, TokenScope
-from girder.exceptions import AccessException, RestException
+from girder.exceptions import AccessException, RestException, ValidationException
 from girder.models.assetstore import Assetstore
 from girder.models.file import File
 from girder.models.folder import Folder
+from girder.models.group import Group
 from girder.models.item import Item
+from girder.models.setting import Setting
 from girder.utility.assetstore_utilities import getAssetstoreAdapter, setAssetstoreAdapter
 from girder.utility.filesystem_assetstore_adapter import FilesystemAssetstoreAdapter, BUF_SIZE
 from girder.utility.progress import ProgressContext
-from girder.plugin import getPlugin, GirderPlugin
+from girder.utility.setting_utilities import validator
+from girder.plugin import GirderPlugin
 
 EPOCH = datetime.datetime(1970, 1, 1)
+WHITELIST_GROUP_SETTING = 'tape_archive.whitelist_group'
+
+
+@validator(WHITELIST_GROUP_SETTING)
+def _validateWhiteListGroup(doc):
+    # Make sure it's a valid group ID
+    group = Group().load(doc['value'], force=True, exc=True)
+    doc['value'] = group['_id']
 
 
 class TapeArchivePlugin(GirderPlugin):
@@ -28,7 +39,8 @@ class TapeArchivePlugin(GirderPlugin):
         setAssetstoreAdapter(AssetstoreType.FILESYSTEM, TarSupportAdapter)
 
         info['apiRoot'].assetstore.route('POST', (':id', 'tar_export'), _exportTar)
-        info['apiRoot'].assetstore.route('POST', (':id', 'tar_import'), _importTar)
+        info['apiRoot'].folder.route('POST', (':id', 'tar_import'), _importTar)
+
 
 class TarSupportAdapter(FilesystemAssetstoreAdapter):
     def downloadFile(self, file, offset=0, headers=True, endByte=None, contentDisposition=None,
@@ -115,6 +127,9 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
         if not os.path.isabs(path):
             path = os.path.join(self.assetstore['root'], path)
 
+        if not os.path.isfile(path):
+            raise ValidationException('Error: %s is not a file.' % path)
+
         folderCache = {}
 
         def _resolveFolder(name):
@@ -179,23 +194,35 @@ def _exportTar(self, assetstore, folder, path, compression, progress):
 
 
 @boundHandler
-@access.admin(scope=TokenScope.DATA_WRITE)
+@access.user(scope=TokenScope.DATA_WRITE)
 @autoDescribeRoute(
     Description('Import a tape archive (tar) file into the system.')
     .notes('This does not move or copy the existing data, it just creates '
            'references to it in the Girder data hierarchy. Deleting '
            'those references will not delete the underlying data.')
-    .modelParam('id', model=Assetstore)
-    .modelParam('folderId', 'Import destination folder.', model=Folder, level=AccessType.WRITE,
-                paramType='formData')
+    .modelParam('id', model=Folder, level=AccessType.WRITE)
+    .modelParam('assetstoreId', 'Alternate assetstore', model=Assetstore, paramType='formData',
+                required=False)
     .param('path', 'Path of the tar file to import.')
     .param('progress', 'Whether to record progress on the import.',
            dataType='boolean', default=False, required=False)
-    .errorResponse()
-    .errorResponse('You are not an administrator.', 403))
+)
 def _importTar(self, assetstore, folder, path, progress):
+    importGroupId = Setting().get(WHITELIST_GROUP_SETTING)
+    if not importGroupId:
+        raise Exception('Import whitelist group ID is not set')
+
     user = self.getCurrentUser()
-    adapter = getAssetstoreAdapter(assetstore)
+    if importGroupId not in user['groups']:
+        raise AccessException('You are not authorized to import tape archive files.')
+
+    if assetstore is None:
+        # This is a reasonable fallback behavior, but we may want something more robust.
+        # Imported files are weird anyway
+        assetstore = Assetstore().getCurrent()
+
+    if assetstore['type'] != AssetstoreType.FILESYSTEM:
+        raise Exception('Not a filesystem assetstore: %s' % assetstore['_id'])
 
     with ProgressContext(progress, user=user, title='Importing data') as ctx:
-        adapter._importTar(path, folder, ctx, user)
+        getAssetstoreAdapter(assetstore)._importTar(path, folder, ctx, user)
