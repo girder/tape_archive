@@ -139,7 +139,7 @@ class TarSupportAdapter(FilesystemAssetstoreAdapter):
                 tokens = name.split('/')
                 sub = folder
                 for token in tokens:
-                    if token == '.':
+                    if token.strip() in {'.', ''}:
                         continue
                     sub = Folder().createFolder(sub, token, creator=user, reuseExisting=True)
                 folderCache[name] = sub
